@@ -70,7 +70,13 @@ TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 
 # ── Demo safety ──────────────────────────────────────────────────────────────
 USE_MOCK_APIS = os.environ.get("USE_MOCK_APIS", "false").lower() == "true"
-MAX_TRANSFER_USD = float(os.environ.get("MAX_TRANSFER_USD", "10.0"))
+MAX_TRANSFER_USD = float(os.environ.get("MAX_TRANSFER_USD", "100.0"))
+
+# ── Receipt economics ─────────────────────────────────────────────────────────
+# Remesa's fees are FLAT (FX + sanctions), so the % advantage only shows at real
+# remittance sizes. The receipt projects savings at the corridor-average amount.
+WU_FEE_PCT = 0.0495                 # Western Union ~4.95%
+REFERENCE_REMITTANCE_USD = 200.0    # avg US→MX remittance, for the projection line
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────

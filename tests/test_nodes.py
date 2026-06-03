@@ -100,12 +100,33 @@ async def test_generate_receipt_math():
     }
     out = await nodes.generate_receipt(state)
     r = out["receipt"]
-    assert r["total_fees_usd"] == pytest.approx(0.06)
+    assert r["total_fees_usd"] == pytest.approx(0.06)  # flat
     assert r["mxn_amount"] == pytest.approx(3430.0)
     assert r["wu_fee_usd"] == pytest.approx(9.9)
     assert r["savings_usd"] == pytest.approx(9.84)
     assert len(r["micropayments"]) == 2
     assert "Remesa enviada" in r["telegram_msg"]
+
+
+@pytest.mark.asyncio
+async def test_receipt_projection_wins_on_small_amount():
+    """Flat fee looks bad on a tiny transfer, but the $200 projection still wins."""
+    state = {
+        "intent": {"amount_usd": 0.5, "recipient_address": DEMO_ADDR, "recipient_name": "mama"},
+        "fx_quote": {"rate_mxn_per_usd": 17.3, "fee_usd": 0.01, "x402_tx_hash": "0xaa"},
+        "sanctions_result": {"cleared": True, "reason": "ok", "fee_usd": 0.05, "x402_tx_hash": "0xbb"},
+        "transfer_tx_hash": "0x" + "cd" * 32,
+    }
+    r = (await nodes.generate_receipt(state))["receipt"]
+    # Actual small-amount savings are negative (flat fee > WU's % on $0.50)...
+    assert r["savings_usd"] < 0
+    # ...but the $200 projection is the hero number shown to the user.
+    assert r["reference_usd"] == 200.0
+    assert r["reference_savings_usd"] == pytest.approx(9.84)
+    assert r["reference_fee_pct"] == pytest.approx(0.03)
+    assert "$200" in r["telegram_msg"]
+    assert "save" in r["telegram_msg"].lower()
+    assert "$-" not in r["telegram_msg"]  # never show negative savings
 
 
 # ── tx hash extraction ────────────────────────────────────────────────────────

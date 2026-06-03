@@ -277,17 +277,27 @@ async def generate_receipt(state: AgentState) -> dict:
     sanctions = state["sanctions_result"]
     tx = state.get("transfer_tx_hash", "0x" + "0" * 64)
 
-    total_fees = quote["fee_usd"] + sanctions["fee_usd"]
-    fee_pct = (total_fees / intent["amount_usd"]) * 100 if intent["amount_usd"] else 0
-    wu_fee = intent["amount_usd"] * 0.0495
+    from config import REFERENCE_REMITTANCE_USD, WU_FEE_PCT
+
+    amount = intent["amount_usd"]
+    total_fees = quote["fee_usd"] + sanctions["fee_usd"]  # FLAT, independent of amount
+    fee_pct = (total_fees / amount) * 100 if amount else 0
+    wu_fee = amount * WU_FEE_PCT
     savings = wu_fee - total_fees
 
+    # Projection at the corridor-average remittance, where the flat-fee edge is
+    # obvious (the actual testnet amount is tiny and would look unflattering).
+    ref = REFERENCE_REMITTANCE_USD
+    ref_wu_fee = ref * WU_FEE_PCT
+    ref_fee_pct = (total_fees / ref) * 100
+    ref_savings = ref_wu_fee - total_fees
+
     receipt = {
-        "amount_usd": intent["amount_usd"],
+        "amount_usd": amount,
         "recipient": intent["recipient_address"],
         "recipient_name": intent.get("recipient_name", "recipient"),
         "rate_mxn_per_usd": quote["rate_mxn_per_usd"],
-        "mxn_amount": intent["amount_usd"] * quote["rate_mxn_per_usd"],
+        "mxn_amount": amount * quote["rate_mxn_per_usd"],
         "transfer_tx_hash": tx,
         "micropayments": [
             {
@@ -305,6 +315,10 @@ async def generate_receipt(state: AgentState) -> dict:
         "fee_pct": fee_pct,
         "wu_fee_usd": wu_fee,
         "savings_usd": savings,
+        "reference_usd": ref,
+        "reference_fee_pct": ref_fee_pct,
+        "reference_wu_fee_usd": ref_wu_fee,
+        "reference_savings_usd": ref_savings,
     }
 
     telegram_msg = (
@@ -321,11 +335,14 @@ async def generate_receipt(state: AgentState) -> dict:
             f"→ tx `{short_hash(mp['tx_hash'])}`\n"
         )
     telegram_msg += (
-        f"\n💰 *Total fees: ${receipt['total_fees_usd']:.2f} "
-        f"({receipt['fee_pct']:.2f}%)*\n"
-        f"  vs. Western Union: ~${receipt['wu_fee_usd']:.2f} (4.95%)\n"
-        f"  You saved: *${receipt['savings_usd']:.2f}*\n\n"
-        f"🔗 [View on BaseScan]"
+        f"\n💰 *Remesa fee: ${receipt['total_fees_usd']:.2f} flat* "
+        f"(FX + sanctions, any amount)\n\n"
+        f"📊 *On a typical ${receipt['reference_usd']:.0f} remittance:*\n"
+        f"  Remesa: `${receipt['total_fees_usd']:.2f}` "
+        f"({receipt['reference_fee_pct']:.2f}%)\n"
+        f"  Western Union: ~`${receipt['reference_wu_fee_usd']:.2f}` (4.95%)\n"
+        f"  → You'd save *${receipt['reference_savings_usd']:.2f}*\n\n"
+        f"🔗 [View transfer on BaseScan]"
         f"(https://sepolia.basescan.org/tx/{tx})"
     )
 
