@@ -21,15 +21,30 @@ import config  # noqa: E402
 from wallet.setup import build_agent_kit, ensure_funded  # noqa: E402
 
 
+def _looks_placeholder(v: str) -> bool:
+    return any(t in v.lower() for t in ("your", "here", "placeholder", "xxxx", "..."))
+
+
 def _check_creds() -> None:
-    missing = [
-        name
-        for name in ("CDP_API_KEY_ID", "CDP_API_KEY_SECRET", "CDP_WALLET_SECRET")
-        if not getattr(config, name)
-    ]
-    if missing:
-        print("❌ Missing CDP credentials in .env: " + ", ".join(missing))
-        print("   See README / portal.cdp.coinbase.com to generate them.")
+    problems = []
+    for name in ("CDP_API_KEY_ID", "CDP_API_KEY_SECRET", "CDP_WALLET_SECRET"):
+        v = (getattr(config, name) or "").strip()
+        if not v:
+            problems.append(f"{name}: missing")
+        elif _looks_placeholder(v):
+            problems.append(f"{name}: still the .env placeholder — replace it")
+
+    if problems:
+        print("❌ CDP credential problems:")
+        for p in problems:
+            print("   •", p)
+        print(
+            "\n   CDP_WALLET_SECRET is generated separately from the API key:\n"
+            "     portal.cdp.coinbase.com → Wallets → Security → Generate\n"
+            "     (it's an ECDSA secp256r1 key — the 'EC key' in the error;\n"
+            "      shown only once, so copy it immediately).\n"
+            "   API key ID + secret come from: portal → Secret API Keys."
+        )
         sys.exit(1)
 
 
