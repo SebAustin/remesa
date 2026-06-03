@@ -10,6 +10,9 @@
 
 > Your AI agent sends money home. And pays its own way.
 
+[![CI](https://github.com/SebAustin/remesa/actions/workflows/ci.yml/badge.svg)](https://github.com/SebAustin/remesa/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 [![Demo Video](docs/demo_thumbnail.png)](YOUR_DEMO_VIDEO_URL)
 
 📹 **Recording the demo?** See [docs/DEMO.md](docs/DEMO.md) for a 90-second script, shot list, and pre-flight checklist.
@@ -242,3 +245,7 @@ its own tool fees, so the x402 receiver is its own wallet.
 - **Near-term:** Off-ramp via Bitso API (USDC → MXN → SPEI instant transfer to any Mexican bank)
 - **Mid-term:** Multi-chain support (Polygon/Arbitrum) via CCTP V2 + multi-leg routing
 - **Business case:** $64.7B corridor × 0.09% fee = $58M TAM at 0.1% market share
+
+## License
+
+MIT — see [LICENSE](LICENSE).
