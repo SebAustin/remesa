@@ -1,0 +1,45 @@
+[project]
+name = "remesa"
+version = "0.1.0"
+description = "Your AI agent that sends money home — and pays its own way."
+requires-python = ">=3.11"
+dependencies = [
+    "langgraph>=0.2.50",
+    "langgraph-checkpoint-sqlite>=2.0.0",
+    "langchain>=0.3.0",
+    "langchain-openai>=0.2.0",
+    "langchain-anthropic>=0.2.0",
+    "langsmith>=0.1.130",
+    "coinbase-agentkit>=0.7.0",
+    "coinbase-agentkit-langchain>=0.7.0",
+    # coinbase-agentkit pins x402<2; the <2 line has no extras, so the EVM /
+    # server deps (web3, eth-account, fastapi, httpx) are declared explicitly below.
+    "x402>=1.0.0,<2",
+    "eth-account>=0.13.0",
+    "python-telegram-bot>=21.0",
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "httpx>=0.27.0",
+    "web3>=7.0.0",
+    "python-dotenv>=1.0.0",
+    "structlog>=24.0.0",
+    "pydantic>=2.7.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-mock>=3.14.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["agent", "services", "wallet", "telegram_bot"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

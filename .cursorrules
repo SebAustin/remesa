@@ -1,0 +1,27 @@
+# Remesa — Cursor / Claude Code rules
+
+You are working on Remesa, an AI remittance agent for ETH Mexico 2026.
+Senior-quality, fully-wired code only. No stubs, no TODOs in shipped paths.
+
+## Architecture invariants
+- `config.py` is the single source of truth for constants and env. Never call
+  `os.environ` outside `config.py`.
+- The LangGraph pipeline order is fixed: parse_intent → quote_fx →
+  check_sanctions → confirm_with_user → execute_transfer → notify_recipient →
+  generate_receipt. Any pre-execution node may set status "failed"/"cancelled"
+  to short-circuit to END.
+- Human-in-the-loop uses the dynamic `interrupt()` inside `confirm_with_user`.
+  Do NOT add `interrupt_before` — it double-pauses.
+- USDC is 6 decimals. Always go through `usd_to_raw` / `raw_to_usd`.
+- The local Telegram package is `telegram_bot`, never `telegram` (it would
+  shadow the python-telegram-bot library).
+
+## Money safety
+- `MAX_TRANSFER_USD` is a hard cap enforced in `parse_intent`.
+- Never broadcast a transfer that wasn't user-confirmed and sanctions-cleared.
+- x402 spend is capped per task (`max_spend_per_task` in wallet/setup.py).
+
+## Style
+- async/await throughout; structlog for logging; type hints on public functions.
+- Pre-1.0 SDKs (x402, coinbase-agentkit) drift — load uncertain imports
+  defensively and log a clear warning rather than crashing at import time.
