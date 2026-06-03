@@ -29,6 +29,9 @@ def _require(name: str) -> str:
 CDP_API_KEY_ID = os.environ.get("CDP_API_KEY_ID", "")
 CDP_API_KEY_SECRET = os.environ.get("CDP_API_KEY_SECRET", "")
 CDP_WALLET_SECRET = os.environ.get("CDP_WALLET_SECRET", "")
+# Pin a wallet so the SAME account is reused across restarts. If empty, CDP
+# mints a BRAND-NEW wallet on every run (different address each time).
+CDP_WALLET_ADDRESS = os.environ.get("CDP_WALLET_ADDRESS", "")
 
 # Coinbase AgentKit / CDP and x402 both use plain network-id strings here
 # (e.g. "base-sepolia"), NOT the CAIP-2 "eip155:84532" form.
@@ -60,7 +63,7 @@ X402_MAX_PAYMENT_RAW = 500_000  # $0.50
 # ── LLM ──────────────────────────────────────────────────────────────────────
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
-LLM_MODEL = os.environ.get("LLM_MODEL", "claude-sonnet-4-5-20250514")
+LLM_MODEL = os.environ.get("LLM_MODEL", "claude-sonnet-4-6")
 
 # ── Telegram ─────────────────────────────────────────────────────────────────
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")

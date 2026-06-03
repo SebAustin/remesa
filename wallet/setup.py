@@ -22,6 +22,7 @@ from config import (
     ACTIVE_NETWORK,
     CDP_API_KEY_ID,
     CDP_API_KEY_SECRET,
+    CDP_WALLET_ADDRESS,
     CDP_WALLET_SECRET,
 )
 
@@ -53,7 +54,10 @@ def build_agent_kit() -> AgentKit:
         api_key_id=CDP_API_KEY_ID,
         api_key_secret=CDP_API_KEY_SECRET,
         wallet_secret=CDP_WALLET_SECRET,
-        network_id=ACTIVE_NETWORK,  # "eip155:84532" — CAIP-2 required
+        network_id=ACTIVE_NETWORK,  # plain network id, e.g. "base-sepolia"
+        # Reuse the same wallet across restarts; without this CDP creates a new
+        # account every run. Leave unset on first run, then pin the printed addr.
+        address=CDP_WALLET_ADDRESS or None,
     )
     wallet_provider = CdpEvmWalletProvider(wallet_config)
 
