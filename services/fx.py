@@ -12,7 +12,7 @@ import httpx
 import structlog
 
 from config import X402_BASE_URL
-from services._payments import payment_tx_from_response
+from services._payments import ensure_paid_ok, payment_tx_from_response
 
 log = structlog.get_logger()
 
@@ -25,6 +25,7 @@ def fetch_fx_quote(x402_session, base_url: str = X402_BASE_URL) -> dict:
     onchain settlement hash of the micropayment (or a zero hash if unavailable).
     """
     response = x402_session.get(f"{base_url}/fx-quote")
+    ensure_paid_ok(response)
     data = response.json()
     data["_payment_tx"] = payment_tx_from_response(response)
     log.info("FX quote fetched", rate=data.get("rate_mxn_per_usd"))

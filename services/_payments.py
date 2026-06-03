@@ -12,6 +12,30 @@ log = structlog.get_logger()
 ZERO_HASH = "0x" + "0" * 64
 
 
+def ensure_paid_ok(response) -> None:
+    """
+    Raise a clear error if an x402-priced request did not return 200.
+
+    A 402 means the micropayment never settled (no X-PAYMENT header, insufficient
+    USDC, max_value too low, or a facilitator rejection). Surfacing the reason
+    here turns a downstream KeyError on the JSON body into an actionable message.
+    """
+    status = getattr(response, "status_code", 200)
+    if status == 200:
+        return
+    reason = ""
+    try:
+        reason = response.json().get("error", "")
+    except Exception:  # noqa: BLE001
+        reason = (getattr(response, "text", "") or "")[:200]
+    if status == 402:
+        raise RuntimeError(
+            f"x402 payment did not settle (HTTP 402): {reason or 'unknown'}. "
+            f"Check the agent's USDC balance and that the facilitator is reachable."
+        )
+    raise RuntimeError(f"x402 endpoint returned HTTP {status}: {reason or 'error'}")
+
+
 def payment_tx_from_response(response) -> str:
     """
     Extract the settlement tx hash from an httpx Response's payment header.

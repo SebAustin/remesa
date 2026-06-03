@@ -11,7 +11,7 @@ import httpx
 import structlog
 
 from config import X402_BASE_URL
-from services._payments import payment_tx_from_response
+from services._payments import ensure_paid_ok, payment_tx_from_response
 
 log = structlog.get_logger()
 
@@ -29,6 +29,7 @@ def screen_address(
         f"{base_url}/sanctions-screen",
         json={"address": address},
     )
+    ensure_paid_ok(response)
     data = response.json()
     data["_payment_tx"] = payment_tx_from_response(response)
     log.info("Sanctions screen fetched", address=address, cleared=data.get("cleared"))
