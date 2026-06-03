@@ -4,7 +4,7 @@ wallet/setup.py — CdpEvmWalletProvider factory and faucet helper.
 Uses the current (non-deprecated) AgentKit API surface. The x402 buyer-side
 action provider moved import paths across AgentKit releases, so it is loaded
 defensively: if it cannot be found, AgentKit still builds and the graph nodes
-fall back to the standalone x402 httpx client (agent/nodes.py:get_x402_client).
+fall back to the standalone x402 session (agent/nodes.py:get_x402_session).
 """
 import structlog
 

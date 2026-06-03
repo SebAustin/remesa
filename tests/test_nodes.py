@@ -50,9 +50,9 @@ async def test_parse_intent_rejects_bad_address(fake_llm_factory):
 
 # ── quote_fx ──────────────────────────────────────────────────────────────────
 @pytest.mark.asyncio
-async def test_quote_fx_returns_quote(patch_x402, fake_x402_client):
-    client = fake_x402_client(get_payload={"rate_mxn_per_usd": 17.15, "fee_usd": 0.01})
-    patch_x402(client)
+async def test_quote_fx_returns_quote(patch_x402, fake_x402_session):
+    session = fake_x402_session(get_payload={"rate_mxn_per_usd": 17.15, "fee_usd": 0.01})
+    patch_x402(session)
     out = await nodes.quote_fx({"intent": {}}, agent_kit=object())
     assert out["fx_quote"]["rate_mxn_per_usd"] == 17.15
     assert out["fx_quote"]["x402_tx_hash"].startswith("0x")
@@ -60,11 +60,11 @@ async def test_quote_fx_returns_quote(patch_x402, fake_x402_client):
 
 # ── check_sanctions ───────────────────────────────────────────────────────────
 @pytest.mark.asyncio
-async def test_check_sanctions_clear(patch_x402, fake_x402_client):
-    client = fake_x402_client(
+async def test_check_sanctions_clear(patch_x402, fake_x402_session):
+    session = fake_x402_session(
         post_payload={"cleared": True, "reason": "No match found"}
     )
-    patch_x402(client)
+    patch_x402(session)
     state = {"intent": {"recipient_address": DEMO_ADDR}}
     out = await nodes.check_sanctions(state, agent_kit=object())
     assert out["sanctions_result"]["cleared"] is True
@@ -72,11 +72,11 @@ async def test_check_sanctions_clear(patch_x402, fake_x402_client):
 
 
 @pytest.mark.asyncio
-async def test_check_sanctions_blocks(patch_x402, fake_x402_client):
-    client = fake_x402_client(
+async def test_check_sanctions_blocks(patch_x402, fake_x402_session):
+    session = fake_x402_session(
         post_payload={"cleared": False, "reason": "Address on OFAC SDN list"}
     )
-    patch_x402(client)
+    patch_x402(session)
     state = {"intent": {"recipient_address": DEMO_ADDR}}
     out = await nodes.check_sanctions(state, agent_kit=object())
     assert out["status"] == "failed"

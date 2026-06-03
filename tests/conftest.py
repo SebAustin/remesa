@@ -56,35 +56,37 @@ class _FakeResponse:
         return self._payload
 
 
-class _FakeX402Client:
-    """Records calls and returns canned JSON; exposes a fake settlement hash."""
+class _FakeX402Session:
+    """
+    Stand-in for the x402 ``requests.Session`` (SYNC). Records calls, returns
+    canned JSON, and carries a fake settlement header so the receipt path runs.
+    """
 
     def __init__(self, get_payload=None, post_payload=None):
         self._get_payload = get_payload or {}
         self._post_payload = post_payload or {}
-        self._last_payment_tx = "0x" + "ab" * 32
         self.calls = []
 
-    async def get(self, url, **kwargs):
+    def get(self, url, **kwargs):
         self.calls.append(("GET", url, kwargs))
         return _FakeResponse(self._get_payload)
 
-    async def post(self, url, **kwargs):
+    def post(self, url, **kwargs):
         self.calls.append(("POST", url, kwargs))
         return _FakeResponse(self._post_payload)
 
 
 @pytest.fixture
-def fake_x402_client():
-    return _FakeX402Client
+def fake_x402_session():
+    return _FakeX402Session
 
 
 @pytest.fixture
 def patch_x402(monkeypatch):
-    """Patch agent.nodes.get_x402_client to return a provided fake client."""
+    """Patch agent.nodes.get_x402_session to return a provided fake session."""
     import agent.nodes as nodes
 
-    def _install(client):
-        monkeypatch.setattr(nodes, "get_x402_client", lambda _ak: client)
+    def _install(session):
+        monkeypatch.setattr(nodes, "get_x402_session", lambda _ak: session)
 
     return _install

@@ -5,6 +5,7 @@ Each function takes AgentState and returns a partial update dict. Nodes that
 need wallet access take an extra ``agent_kit`` keyword, which ``graph.py`` binds
 via ``functools.partial`` before registering the node.
 """
+import asyncio
 import json
 import re
 
@@ -42,27 +43,26 @@ def _get_llm() -> ChatAnthropic:
     return _llm
 
 
-# ── Shared x402 client (the agent is the buyer) ───────────────────────────────
-_x402 = None
+# ── Shared x402 buyer session (the agent is the buyer) ────────────────────────
+# The CDP wallet is sync-blocking (it signs via loop.run_until_complete), so it
+# CANNOT sign inside a running event loop. We therefore use x402's SYNC
+# requests-based session and drive every call through asyncio.to_thread — in a
+# worker thread there is no running loop, so the wallet's signing works. The CDP
+# MPC wallet stays the payer, bridged via wallet_provider.to_signer().
+_x402_session = None
 
 
-def get_x402_client(agent_kit):
-    """
-    Lazy singleton x402 buyer client (an httpx.AsyncClient subclass).
+def get_x402_session(agent_kit):
+    """Lazy singleton sync x402 ``requests.Session`` that pays from the CDP wallet."""
+    global _x402_session
+    if _x402_session is None:
+        from x402.clients import x402_requests
 
-    The CDP MPC wallet is bridged to an eth_account-compatible signer via
-    ``wallet_provider.to_signer()``; the client signs the EIP-3009 USDC
-    authorization automatically when an endpoint returns HTTP 402.
-    """
-    global _x402
-    if _x402 is None:
-        from x402.clients.httpx import x402HttpxClient
-
-        _x402 = x402HttpxClient(
+        _x402_session = x402_requests(
             account=agent_kit.wallet_provider.to_signer(),
             max_value=X402_MAX_PAYMENT_RAW,  # cap a single micropayment
         )
-    return _x402
+    return _x402_session
 
 
 # ── Node 1: parse_intent ──────────────────────────────────────────────────────
@@ -124,11 +124,12 @@ async def quote_fx(state: AgentState, agent_kit) -> dict:
     Call the x402-priced /fx-quote endpoint. The agent pays $0.01 USDC
     autonomously for this tool call and returns the tx hash for the receipt.
     """
-    client = get_x402_client(agent_kit)
+    session = get_x402_session(agent_kit)
     try:
         from services.fx import fetch_fx_quote
 
-        data = await fetch_fx_quote(client)
+        # Blocking (signs the x402 payment) — run off the event loop.
+        data = await asyncio.to_thread(fetch_fx_quote, session)
         quote = FxQuote(
             rate_mxn_per_usd=data["rate_mxn_per_usd"],
             fee_usd=data.get("fee_usd", 0.01),
@@ -147,12 +148,13 @@ async def check_sanctions(state: AgentState, agent_kit) -> dict:
     Call the x402-priced /sanctions-screen endpoint. The agent pays $0.05 USDC.
     Blocks the transfer if the recipient address is on the OFAC SDN list.
     """
-    client = get_x402_client(agent_kit)
+    session = get_x402_session(agent_kit)
     recipient = state["intent"]["recipient_address"]
     try:
         from services.sanctions import screen_address
 
-        data = await screen_address(client, recipient)
+        # Blocking (signs the x402 payment) — run off the event loop.
+        data = await asyncio.to_thread(screen_address, session, recipient)
         result = SanctionsResult(
             cleared=data["cleared"],
             reason=data["reason"],
@@ -204,10 +206,13 @@ async def execute_transfer(state: AgentState, agent_kit) -> dict:
     try:
         # The ERC20 transfer action takes the amount in WHOLE units (e.g. "1.5"),
         # not raw 6-decimal units — AgentKit handles the decimal conversion.
-        result = await _execute_action(
+        # The CDP wallet signs synchronously (loop.run_until_complete), so this
+        # must run off the event loop in a worker thread.
+        result = await asyncio.to_thread(
+            _invoke_action,
             agent_kit,
-            action_name="ERC20ActionProvider_transfer",
-            params={
+            "ERC20ActionProvider_transfer",
+            {
                 "amount": str(intent["amount_usd"]),
                 "contract_address": ACTIVE_USDC,
                 "destination_address": intent["recipient_address"],
@@ -221,20 +226,17 @@ async def execute_transfer(state: AgentState, agent_kit) -> dict:
         return {"status": "failed", "error": f"Transfer error: {exc}"}
 
 
-async def _execute_action(agent_kit, *, action_name: str, params: dict):
+def _invoke_action(agent_kit, action_name: str, params: dict):
     """
-    Invoke an AgentKit action by name. AgentKit exposes actions through its
-    action providers (``get_actions`` → ``action.invoke(args)``); this resolves
-    the action and calls it whether the SDK surface is sync or async.
-    """
-    import inspect
+    Invoke an AgentKit action by name (SYNCHRONOUS — call via asyncio.to_thread).
 
+    AgentKit exposes actions through its action providers (``get_actions`` →
+    ``action.invoke(args)``). The CDP wallet's signing is sync-blocking, so this
+    helper is intentionally synchronous and must not be awaited directly.
+    """
     for action in agent_kit.get_actions():
         if action.name == action_name or action.name.endswith(action_name):
-            invoke = action.invoke(params)
-            if inspect.isawaitable(invoke):
-                return await invoke
-            return invoke
+            return action.invoke(params)
     available = [a.name for a in agent_kit.get_actions()]
     raise RuntimeError(
         f"AgentKit action not found: {action_name}. Available: {available}"

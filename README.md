@@ -215,8 +215,25 @@ A few changes were made so the code actually runs as wired:
     `execute_action`).
   - Faucet is requested through `wallet_provider.get_client()` (CDP client);
     `CdpEvmWalletProvider` has no `request_faucet`/token-arg `get_balance`.
+- **AgentKit is sync-blocking** — `CdpEvmWalletProvider`'s constructor calls
+  `asyncio.run()`, and its sign/send methods call `loop.run_until_complete()`,
+  so they cannot run inside a running event loop. Remesa builds the kit *before*
+  `asyncio.run` and drives every blocking CDP call (USDC transfer + x402 payment
+  signing) through `asyncio.to_thread`. The x402 buyer therefore uses the **sync**
+  `x402.clients.x402_requests` session (not the async `x402HttpxClient`) so the
+  CDP wallet stays the payer.
 - **x402 / AgentKit imports** are still loaded defensively where signatures may
   drift; mismatches log a clear warning instead of crashing.
+
+### Quick wallet check
+
+```bash
+python scripts/print_wallet_address.py          # print address + balances
+python scripts/print_wallet_address.py --faucet # also request Base Sepolia funds
+```
+
+Copy the printed address into `X402_RECEIVER_ADDRESS` in `.env` — the agent pays
+its own tool fees, so the x402 receiver is its own wallet.
 
 ## Roadmap
 

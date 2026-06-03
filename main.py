@@ -24,12 +24,8 @@ from wallet.setup import build_agent_kit, ensure_funded
 log = structlog.get_logger()
 
 
-async def main() -> None:
+async def main(agent_kit) -> None:
     log.info("Remesa starting up...")
-    config.require_runtime_secrets()
-
-    # 1. Init wallet and AgentKit
-    agent_kit = build_agent_kit()
     await ensure_funded(agent_kit)
 
     # 2. Build LangGraph (durable SQLite checkpointer)
@@ -66,7 +62,12 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
+    config.require_runtime_secrets()
+    # 1. Init wallet + AgentKit OUTSIDE the event loop: CdpEvmWalletProvider's
+    #    constructor calls asyncio.run() internally, which fails if a loop is
+    #    already running (see remesa-agentkit-sync-blocking).
+    _agent_kit = build_agent_kit()
     try:
-        asyncio.run(main())
+        asyncio.run(main(_agent_kit))
     except (KeyboardInterrupt, SystemExit):
         log.info("Remesa stopped.")
