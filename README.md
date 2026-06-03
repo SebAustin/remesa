@@ -12,6 +12,8 @@
 
 [![Demo Video](docs/demo_thumbnail.png)](YOUR_DEMO_VIDEO_URL)
 
+📹 **Recording the demo?** See [docs/DEMO.md](docs/DEMO.md) for a 90-second script, shot list, and pre-flight checklist.
+
 ## The Problem
 
 45 million Americans send **$64.7B/year to Mexico**. Western Union charges ~5%
