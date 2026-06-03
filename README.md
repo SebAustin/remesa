@@ -69,20 +69,75 @@ send a small testnet amount; the receipt projects the at-scale savings.)
 
 ## Architecture
 
-```
-User → Telegram → LangGraph StateGraph
-                      ├── parse_intent (Claude Sonnet)
-                      ├── quote_fx ──────────────→ x402 FastAPI /fx-quote ($0.01 USDC)
-                      ├── check_sanctions ────────→ x402 FastAPI /sanctions-screen ($0.05)
-                      ├── confirm_with_user [INTERRUPT — human approval required]
-                      ├── execute_transfer ───────→ Base Sepolia USDC transfer (AgentKit)
-                      ├── notify_recipient
-                      └── generate_receipt ───────→ Itemized receipt to Telegram
+```mermaid
+flowchart TD
+    U["👤 User"] -->|"send $5 to mama at 0x…"| TG["Telegram bot<br/>(python-telegram-bot)"]
+    TG -->|"ainvoke / Command(resume=YES)"| P
+    RC -->|"itemized receipt + BaseScan links"| TG
+
+    subgraph GRAPH["LangGraph StateGraph · durable SqliteSaver checkpoint"]
+        direction TB
+        P["parse_intent"] --> FX["quote_fx"] --> SC["check_sanctions"]
+        SC --> CF["confirm_with_user<br/>⏸️ human YES / NO"]
+        CF --> EX["execute_transfer"] --> NR["notify_recipient"] --> RC["generate_receipt"]
+    end
+
+    P -. "intent JSON" .-> CLA["Claude Sonnet 4.6"]
+
+    FX -->|"x402 pay $0.01"| SRV
+    SC -->|"x402 pay $0.05"| SRV
+    subgraph SRV["x402 FastAPI server · require_payment"]
+        EP1["GET /fx-quote"]
+        EP2["POST /sanctions-screen"]
+    end
+    EP1 -. "live rate" .-> ERA["exchangerate API"]
+
+    SRV -->|"verify + settle"| FAC["x402 Facilitator"]
+    EX -->|"erc20 transfer (whole units)"| AK["Coinbase AgentKit<br/>CdpEvmWalletProvider (CDP Server Wallet)"]
+
+    FAC -->|"transferWithAuthorization (EIP-3009)"| BASE[("Base Sepolia · USDC")]
+    AK --> BASE
+    BASE -. "tx hashes" .-> BS["🔗 BaseScan"]
+
+    classDef chain fill:#0052ff,stroke:#003bbf,color:#fff;
+    classDef ext fill:#f4f4f5,stroke:#a1a1aa,color:#111;
+    class BASE chain;
+    class CLA,ERA,FAC,BS ext;
 ```
 
-Failure/cancellation at any pre-execution node short-circuits straight to END
-via conditional routing, so the agent never broadcasts an unconfirmed or
-sanctioned transfer.
+Failure or cancellation at any pre-execution node short-circuits straight to
+`END` via conditional routing, so the agent **never broadcasts an unconfirmed or
+sanctioned transfer**.
+
+### The x402 self-payment flow (per tool call)
+
+This is what makes the receipt's "the AI paid for its own tools" claim literally
+true — every quote/screen is a real on-chain USDC micropayment.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant N as LangGraph node
+    participant X as x402 client (CDP signer)
+    participant S as x402 endpoint
+    participant F as x402 Facilitator
+    participant B as Base Sepolia
+
+    N->>S: GET /fx-quote
+    S-->>X: 402 Payment Required<br/>(price, payTo, USDC asset)
+    X->>X: sign EIP-3009 USDC authorization<br/>(wallet_provider.to_signer())
+    X->>S: retry + X-PAYMENT header
+    S->>F: verify + settle
+    F->>B: transferWithAuthorization (USDC)
+    B-->>F: tx hash
+    F-->>S: settled ✓
+    S-->>N: 200 { rate } + X-PAYMENT-RESPONSE (tx hash)
+    N->>N: decode tx hash → itemized receipt
+```
+
+> Because the CDP wallet signs synchronously, each x402 call (and the final
+> transfer) runs in `asyncio.to_thread`, and a fresh single-use x402 session is
+> built per call. See [Implementation Notes](#implementation-notes-deviations-from-the-original-spec).
 
 ## Tech Stack
 
