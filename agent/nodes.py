@@ -43,26 +43,24 @@ def _get_llm() -> ChatAnthropic:
     return _llm
 
 
-# ── Shared x402 buyer session (the agent is the buyer) ────────────────────────
+# ── x402 buyer session (the agent is the buyer) ───────────────────────────────
 # The CDP wallet is sync-blocking (it signs via loop.run_until_complete), so it
 # CANNOT sign inside a running event loop. We therefore use x402's SYNC
 # requests-based session and drive every call through asyncio.to_thread — in a
 # worker thread there is no running loop, so the wallet's signing works. The CDP
 # MPC wallet stays the payer, bridged via wallet_provider.to_signer().
-_x402_session = None
-
-
+#
+# IMPORTANT: an x402 requests.Session pays for ONE request only — after a
+# successful payment it stops attaching X-PAYMENT on subsequent requests. So we
+# build a FRESH session per tool call rather than caching a singleton.
 def get_x402_session(agent_kit):
-    """Lazy singleton sync x402 ``requests.Session`` that pays from the CDP wallet."""
-    global _x402_session
-    if _x402_session is None:
-        from x402.clients import x402_requests
+    """Build a single-use sync x402 ``requests.Session`` paying from the CDP wallet."""
+    from x402.clients import x402_requests
 
-        _x402_session = x402_requests(
-            account=agent_kit.wallet_provider.to_signer(),
-            max_value=X402_MAX_PAYMENT_RAW,  # cap a single micropayment
-        )
-    return _x402_session
+    return x402_requests(
+        account=agent_kit.wallet_provider.to_signer(),
+        max_value=X402_MAX_PAYMENT_RAW,  # cap a single micropayment
+    )
 
 
 # ── Node 1: parse_intent ──────────────────────────────────────────────────────
