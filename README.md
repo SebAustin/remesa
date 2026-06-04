@@ -19,7 +19,13 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
 </p>
 
-▶️ **Demo video:** _coming soon_ · 📹 Recording guide: [docs/DEMO.md](docs/DEMO.md)
+<p align="center">
+  <a href="https://youtu.be/Zulf-D8qEJs">
+    <img src="https://img.youtube.com/vi/Zulf-D8qEJs/hqdefault.jpg" alt="Watch the Remesa demo" width="480">
+  </a>
+</p>
+
+<p align="center">▶️ <b><a href="https://youtu.be/Zulf-D8qEJs">Watch the 90-second demo</a></b> · 📹 Recording guide: <a href="docs/DEMO.md">docs/DEMO.md</a></p>
 
 > **Status:** working end-to-end on **Base Sepolia** — real USDC transfer + two
 > real x402 micropayments per run, with human-in-the-loop confirmation. 🧪

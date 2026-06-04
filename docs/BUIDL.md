@@ -117,7 +117,7 @@ payment layer, the FastAPI priced services, the Telegram UX, tests, and CI.
 ## 🔗 Links
 
 - **GitHub:** https://github.com/SebAustin/remesa
-- **Demo video:** _<add after recording>_
+- **Demo video:** https://youtu.be/Zulf-D8qEJs
 - **Network:** Base Sepolia (testnet) — example txs on https://sepolia.basescan.org
 
 ---
