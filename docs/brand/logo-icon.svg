@@ -1,0 +1,32 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0A5BFF"/>
+      <stop offset="1" stop-color="#00C2A8"/>
+    </linearGradient>
+    <linearGradient id="plane" x1="150" y1="150" x2="380" y2="360" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#E6EEFF"/>
+    </linearGradient>
+  </defs>
+
+  <!-- app-icon background -->
+  <rect width="512" height="512" rx="116" fill="url(#bg)"/>
+
+  <!-- dotted flight path (remittance arc) -->
+  <path d="M104 392 Q 232 332 372 150" stroke="#FFFFFF" stroke-opacity="0.5"
+        stroke-width="12" stroke-linecap="round" stroke-dasharray="0.5 30"/>
+
+  <!-- paper plane (send / Telegram nod) tilted up-right -->
+  <g transform="rotate(-16 256 250)">
+    <path d="M150 250 L386 138 L320 372 L268 286 Z" fill="url(#plane)"/>
+    <path d="M386 138 L268 286 L320 372 Z" fill="#BBD2FF"/>
+    <path d="M386 138 L268 286 L150 250 Z" fill="#FFFFFF"/>
+  </g>
+
+  <!-- USDC coin: the agent's own onchain payment -->
+  <circle cx="150" cy="384" r="46" fill="#FFFFFF"/>
+  <circle cx="150" cy="384" r="46" stroke="#0A5BFF" stroke-opacity="0.15" stroke-width="2"/>
+  <text x="150" y="402" font-family="Arial, Helvetica, sans-serif" font-size="52"
+        font-weight="700" text-anchor="middle" fill="#0A5BFF">$</text>
+</svg>

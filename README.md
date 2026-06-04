@@ -6,16 +6,20 @@
 [ ] Live testnet demo URL or Replit link added
 -->
 
-# Remesa 🌎 — AI Remittances on Base
+<p align="center">
+  <img src="docs/brand/logo-lockup.png" alt="Remesa — AI remittances on Base" width="620">
+</p>
 
-> Your AI agent sends money home. And pays its own way.
+<h1 align="center">Remesa 🌎 — AI Remittances on Base</h1>
 
-[![CI](https://github.com/SebAustin/remesa/actions/workflows/ci.yml/badge.svg)](https://github.com/SebAustin/remesa/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+<p align="center"><em>Your AI agent sends money home. And pays its own way.</em></p>
 
-[![Demo Video](docs/demo_thumbnail.png)](YOUR_DEMO_VIDEO_URL)
+<p align="center">
+  <a href="https://github.com/SebAustin/remesa/actions/workflows/ci.yml"><img src="https://github.com/SebAustin/remesa/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+</p>
 
-📹 **Recording the demo?** See [docs/DEMO.md](docs/DEMO.md) for a 90-second script, shot list, and pre-flight checklist.
+▶️ **Demo video:** _coming soon_ · 📹 Recording guide: [docs/DEMO.md](docs/DEMO.md)
 
 > **Status:** working end-to-end on **Base Sepolia** — real USDC transfer + two
 > real x402 micropayments per run, with human-in-the-loop confirmation. 🧪

@@ -1,0 +1,33 @@
+<svg width="1320" height="360" viewBox="0 0 1320 360" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="40" y1="40" x2="320" y2="320" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0A5BFF"/>
+      <stop offset="1" stop-color="#00C2A8"/>
+    </linearGradient>
+    <linearGradient id="plane" x1="120" y1="120" x2="280" y2="280" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#E6EEFF"/>
+    </linearGradient>
+  </defs>
+
+  <!-- icon (scaled copy of logo-icon) -->
+  <g transform="translate(40 40) scale(0.546875)">
+    <rect width="512" height="512" rx="116" fill="url(#bg)"/>
+    <path d="M104 392 Q 232 332 372 150" stroke="#FFFFFF" stroke-opacity="0.5"
+          stroke-width="12" stroke-linecap="round" stroke-dasharray="0.5 30"/>
+    <g transform="rotate(-16 256 250)">
+      <path d="M150 250 L386 138 L320 372 L268 286 Z" fill="url(#plane)"/>
+      <path d="M386 138 L268 286 L320 372 Z" fill="#BBD2FF"/>
+      <path d="M386 138 L268 286 L150 250 Z" fill="#FFFFFF"/>
+    </g>
+    <circle cx="150" cy="384" r="46" fill="#FFFFFF"/>
+    <text x="150" y="402" font-family="Arial, Helvetica, sans-serif" font-size="52"
+          font-weight="700" text-anchor="middle" fill="#0A5BFF">$</text>
+  </g>
+
+  <!-- wordmark -->
+  <text x="360" y="195" font-family="Arial, Helvetica, sans-serif" font-size="150"
+        font-weight="800" fill="#0A1F44" letter-spacing="-4">Remesa</text>
+  <text x="364" y="255" font-family="Arial, Helvetica, sans-serif" font-size="40"
+        font-weight="500" fill="#5B6472">AI remittances on Base — that pay their own way</text>
+</svg>
